@@ -1,0 +1,123 @@
+﻿--1. Cho biết họ tên nhân viên (HONV, TENLOT, TENNV) có mức lương trên
+--mức lương trung bình của phòng "Nghiên cứu"
+-- truy van con
+select AVG(LUONG) AS LUONGTBPNC
+from NHANVIEN join PHONGBAN on NHANVIEN.PHONG = PHONGBAN.MAPHG
+where TENPHG = N'Nghiên cứu'
+-- truy van cha
+select HONV + TENLOT + TENNV as HoTenNV ,LUONG
+from NHANVIEN
+where LUONG > (select AVG(LUONG) AS LUONGTBPNC
+                        from NHANVIEN join PHONGBAN on NHANVIEN.PHONG = PHONGBAN.MAPHG
+                        where TENPHG = N'Nghiên cứu')
+--2. Danh sách những nhân viên (HONV, TENLOT, TENNV) mà không có danh
+--sách thân nhân.
+-- truy van con
+select DISTINCT MA_NVIEN from THANNHAN
+select * from NHANVIEN
+-- truy van cha
+select  HONV + TENLOT + TENNV as HoTenNV , MANV
+from NHANVIEN
+where MANV NOT IN (select DISTINCT MA_NVIEN from THANNHAN)
+--3. Danh sách những trưởng phòng (HONV, TENLOT, TENNV) có tối thiểu một
+--thân nhân.
+-- truy van con
+select *  from NHANVIEN
+select DISTINCT MA_NVIEN from THANNHAN
+--truy van cha
+--C1
+select HONV + TENLOT + TENNV as HoTenTP, MANV
+from NHANVIEN join PHONGBAN on NHANVIEN.MANV = PHONGBAN.TRUONGPHG
+where MANV IN (select DISTINCT MA_NVIEN from THANNHAN)
+--c2 dung exists KT co ton tai it nhat 1
+select HONV + TENLOT + TENNV as HoTenTP, MANV
+from NHANVIEN join PHONGBAN on NHANVIEN.MANV = PHONGBAN.TRUONGPHG
+where EXISTS ( select DISTINCT MA_NVIEN from THANNHAN where MANV=MA_NVIEN)
+--4. Cho biết danh sách các mã đề án mà nhân viên có mã là 009 chưa được phân
+--công.
+select MADA
+from PHANCONG
+where MA_NVIEN ='009'
+select DISTINCT TENDA,MADA
+from DEAN join CONGVIEC on MADA=SODA
+where MADA not in (select MADA from PHANCONG where MA_NVIEN ='009')
+--5. Cho biết danh sách các công việc (tên công việc) trong đề án 'Sản phẩm X' mà
+--nhân viên có mã là 009 chưa được phân công.
+-- tim ten cv ma nv 009 co lam 
+select  TEN_CONG_VIEC,MA_NVIEN
+from CONGVIEC join PHANCONG on CONGVIEC.SODA=PHANCONG.MADA and CONGVIEC.STT = PHANCONG.STT
+where MA_NVIEN='009'
+-- tim nhung cai 009 ko dc phan cong lam
+select TENDA,TEN_CONG_VIEC
+from DEAN join CONGVIEC on MADA=SODA
+where TENDA= N'Sản Phẩm X' and TEN_CONG_VIEC NOT IN (select  TEN_CONG_VIEC
+                                                        from CONGVIEC join PHANCONG on CONGVIEC.SODA=PHANCONG.MADA and CONGVIEC.STT = PHANCONG.STT
+                                                        where MA_NVIEN='009')
+--6. Cho biết tên phòng ban và họ tên trưởng phòng của phòng ban có đông nhân
+--viên nhất.
+--dem so nhan vien tung phong
+select PHONG,COUNT(MANV) as NV1phong
+from NHANVIEN
+group by PHONG
+-- tim phong co nhiu nhan vien nhat
+select PHONG,COUNT(MANV) as PHONGNHIEUNHAT
+from NHANVIEN
+group by PHONG
+HAVING COUNT(MANV) >= ALL(select COUNT(MANV) as NV1phong
+                                                        from NHANVIEN 
+                                                        group by PHONG)
+--La truong phong cua phong dong nhat
+select *
+from NHANVIEN join PHONGBAN on MANV=TRUONGPHG
+where MAPHG IN ( select COUNT(MANV) as PHONGNHIEUNHAT
+                                        from NHANVIEN
+                                        group by PHONG
+                                        HAVING COUNT(MANV) >= ALL(select COUNT(MANV) as NV1phong
+                                                                                                from NHANVIEN 
+                                                                                                group by PHONG))
+--7. Tìm họ tên (HONV, TENLOT, TENNV) và địa chỉ (DCHI) của những nhân
+--viên làm việc cho một đề án ở 'TP HCM' nhưng phòng ban mà họ trực thuộc
+--lại không tọa lạc ở thành phố 'TP HCM'.
+--nhan viec lam de an tai ho chi minh
+select DDIEM_DA
+from DEAN
+where DDIEM_DA = N'TP HCM'
+-- PHONG ban truc thuoc ở TPHCM
+select TENPHG,DDIEM
+from PHONGBAN join DDIEMPHG on PHONGBAN.MAPHG = DDIEMPHG.MAPHG
+where DDIEMPHG.DDIEM IN (select DDIEM_DA
+                                                        from DEAN
+                                                        where DDIEM_DA = N'TP HCM')
+--Nhan vien lam de an nhung ko truc thuoc
+select HONV+TENLOT+TENNV as HoTenNV, DCHI
+from NHANVIEN join PHONGBAN on NHANVIEN.PHONG=PHONGBAN.MAPHG
+where NHANVIEN.MA_NQL not in (select DDIEM
+                                                        from PHONGBAN join DDIEMPHG on PHONGBAN.MAPHG = DDIEMPHG.MAPHG
+                                                        where DDIEMPHG.DDIEM IN (select DDIEM_DA
+                                                                                                        from DEAN
+                                                                                                        where DDIEM_DA = N'TP HCM')
+                                                        )
+--8. Tìm họ tên và địa chỉ của các nhân viên làm việc cho một đề án ở một thành
+--phố nhưng địa điểm phòng ban mà họ trực thuộc lại không toạ lạc ở thành phố
+--đó.
+select DDIEM_DA
+from DEAN
+-- PHONG ban truc thuoc ở TPHCM
+select TENPHG,DDIEM
+from PHONGBAN join DDIEMPHG on PHONGBAN.MAPHG = DDIEMPHG.MAPHG
+where DDIEMPHG.DDIEM IN (select DDIEM_DA
+                                                        from DEAN
+                                                        )
+--Nhan vien lam de an nhung ko truc thuoc
+select HONV+TENLOT+TENNV as HoTenNV, DCHI
+from NHANVIEN join PHONGBAN on NHANVIEN.PHONG=PHONGBAN.MAPHG
+where NHANVIEN.MA_NQL not in (select DDIEM
+                                                        from PHONGBAN join DDIEMPHG on PHONGBAN.MAPHG = DDIEMPHG.MAPHG
+                                                        where DDIEMPHG.DDIEM IN (select DDIEM_DA
+                                                                                                        from DEAN
+                                                                                                        )
+                                                        )
+select * from DDIEMPHG
+select * from PHONGBAN
+select * from DEAN
+select * from NHANVIEN

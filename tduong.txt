@@ -1,0 +1,112 @@
+--1. Cho biết lương trung bình của các nhân viên không phải là phi công.
+select AVG(LUONG) as LUONGTB
+from NHANVIEN
+where LOAINV = 0 
+--2. Cho biết mức lương trung bình của các phi công.
+select LOAINV,AVG(LUONG) as LUONGTB
+from NHANVIEN
+GROUP BY LOAINV --0 : la NV --1: la phi cong
+
+--3. Cho biết số lượng chuyến bay xuất phát từ sân bay MIA vào ngày 11/01/2000.
+select *
+from CHUYENBAY  join LICHBAY  on CHUYENBAY.MACB = LICHBAY.MACB
+where CHUYENBAY.SBDI = 'MIA' and LICHBAY.NGAYDI ='2000-11-01'
+select COUNT(SBDI) as CHUYENBAYXUATPHAT , NGAYDI,SBDI
+from CHUYENBAY  join LICHBAY  on CHUYENBAY.MACB = LICHBAY.MACB
+where CHUYENBAY.SBDI = 'MIA' and LICHBAY.NGAYDI ='2000-11-01'
+group by SBDI,LICHBAY.NGAYDI
+--4. Với mỗi sân bay (SBDEN), cho biết số lượng chuyến bay hạ cánh xuống sân
+--bay đó. Kết quả được sắp xếp theo thứ tự tăng dần của sân bay đến.
+select COUNT(SBDEN) as CHUYENBAYHACANH, SBDEN
+from CHUYENBAY
+group by SBDEN 
+order by CHUYENBAYHACANH ASC
+--5. Với các sân bay (SBDI) MIA, ORD, SLC, BOS, cho biết số lượng chuyến bay
+--xuất phát theo từng ngày. Xuất ra mã sân bay đi, ngày và số lượng.
+select *
+ from CHUYENBAY  join LICHBAY  on CHUYENBAY.MACB = LICHBAY.MACB
+ group by SBDI,LICHBAY.NGAYDI
+ select COUNT(LICHBAY.MACB) as SLCBXP,SBDI,NGAYDI
+ from CHUYENBAY  join LICHBAY  on CHUYENBAY.MACB = LICHBAY.MACB
+ where SBDI='MIA' or SBDI='ORD' or SBDI='SLC' or SBDI='BOS' 
+ group by SBDI,LICHBAY.NGAYDI
+--6. Với mỗi lịch bay, cho biết mã chuyến bay, ngày đi cùng với số lượng nhân
+--viên không phải là phi công của chuyến bay đó.
+SELECT *
+FROM LICHBAY as LB join PHANCONG as PC on LB.NGAYDI=PC.NGAYDI and LB.MACB = PC.MACB
+					join NHANVIEN as NV on PC.MANV=NV.MANV
+where LOAINV = 0
+SELECT COUNT(NV.MANV) as SOLUONGNV,LB.NGAYDI,PHANCONG.MACB
+FROM LICHBAY as LB join PHANCONG  on LB.NGAYDI=PHANCONG.NGAYDI and LB.MACB = PHANCONG.MACB
+					join NHANVIEN as NV on PHANCONG.MANV=NV.MANV
+where LOAINV = 0
+group by LB.NGAYDI,PHANCONG.MACB
+--7. Với mỗi chuyến bay, cho biết mã chuyến bay, ngày đi, cùng với số lượng hành
+--khách đã đặt chỗ của chuyến bay đó, sắp theo thứ tự giảm dần của số lượng.
+select  LB.MACB,LB.NGAYDI,COUNT(KHACHHANG.MAKH) as SOLUONGKH
+from LICHBAY as LB join DATCHO as DC on LB.MACB = DC.MACB and LB.NGAYDI = DC.NGAYDI
+					join KHACHHANG on DC.MAKH = KHACHHANG.MAKH
+GROUP BY  LB.MACB,LB.NGAYDI
+ORDER BY SOLUONGKH DESC
+--8. Với mỗi chuyến bay, cho biết mã chuyến bay, ngày đi, tổng lương của phi hành
+--đoàn (các nhân viên được phân công trong chuyến bay), sắp xếp theo thứ tự
+--tăng dần của tổng lương.
+select LB.MACB,LB.NGAYDI,SUM(LUONG) as LUONG
+FROM LICHBAY as LB join PHANCONG  on LB.NGAYDI=PHANCONG.NGAYDI and LB.MACB = PHANCONG.MACB
+					join NHANVIEN as NV on PHANCONG.MANV=NV.MANV
+where LOAINV= 1
+group BY LB.MACB,LB.NGAYDI
+order by SUM(LUONG) ASC
+--9. Với mỗi loại máy bay, cho biết số lượng chuyến bay đã bay trên loại máy bay
+--đó hạ cánh xuống sân bay ORD. Xuất ra mã loại máy bay, số lượng chuyến
+--bay.
+select COUNT(LICHBAY.MACB) AS SLCB,MAYBAY.MALOAI 
+from CHUYENBAY  join LICHBAY  on CHUYENBAY.MACB = LICHBAY.MACB
+				join MAYBAY on LICHBAY.SOHIEU=MAYBAY.SOHIEU and LICHBAY.MALOAI = MAYBAY.MALOAI
+where SBDEN = 'ORD'
+group by MAYBAY.MALOAI
+--10. Cho biết sân bay (SBDI) và số lượng chuyến bay có nhiều hơn 2 chuyến bay
+--xuất phát trong khoảng 10 giờ đến 22 giờ.
+SELECT SBDEN,COUNT(LICHBAY.MACB) as SLCB
+from CHUYENBAY join LICHBAY on CHUYENBAY.MACB = LICHBAY.MACB
+where GIODI  BETWEEN '10:00' and '22:00'
+group by SBDEN
+HAVING COUNT(LICHBAY.MACB) >2
+--11. Cho biết tên phi công được phân công vào ít nhất 2 chuyến bay trong cùng một
+--ngày.
+select TEN,COUNT(LB.MACB) as SLCB ,LB.NGAYDI
+FROM LICHBAY as LB join PHANCONG  on LB.NGAYDI=PHANCONG.NGAYDI and LB.MACB = PHANCONG.MACB
+					join NHANVIEN as NV on PHANCONG.MANV=NV.MANV
+where LOAINV = 1
+group by LB.NGAYDI,TEN,LB.NGAYDI
+having COUNT(LB.MACB) >=2
+--12. Cho biết mã chuyến bay và ngày đi của những chuyến bay có ít hơn 3 hành
+--khách đặt chỗ.
+select * 
+from LICHBAY as LB join DATCHO as DC on LB.MACB = DC.MACB and LB.NGAYDI = DC.NGAYDI
+					join KHACHHANG on DC.MAKH = KHACHHANG.MAKH
+select LB.MACB,LB.NGAYDI,COUNT(KHACHHANG.MAKH) as KDC 
+from LICHBAY as LB join DATCHO as DC on LB.MACB = DC.MACB and LB.NGAYDI = DC.NGAYDI
+					join KHACHHANG on DC.MAKH = KHACHHANG.MAKH
+GROUP BY  LB.MACB,LB.NGAYDI
+having COUNT(KHACHHANG.MAKH) <=3
+--13. Cho biết số hiệu máy bay và loại máy bay mà phi công có mã 1001 được phân
+--công lái trên 2 lần.
+Select SOHIEU,MALOAI,COUNT (LICHBAY.MACB) as SLCB
+from NHANVIEN join PHANCONG on NHANVIEN.MANV = PHANCONG.MANV
+			join LICHBAY on PHANCONG.MACB = LICHBAY.MACB and PHANCONG.NGAYDI= LICHBAY.NGAYDI
+where NHANVIEN.MANV='1001'
+group by SOHIEU,MALOAI
+HAVING COUNT (LICHBAY.MACB)>=2
+--14. Với mỗi hãng sản xuất, cho biết số lượng loại máy bay mà hãng đó đã sản xuất.
+--Xuất ra hãng sản xuất và số lượng.
+--15. Với mỗi loại nhân viên có tổng lương trên 600000, cho biết số lượng nhân viên
+--trong từng loại nhân viên đó. xuất loại nhân viên, tổng lương và số lượng nhân
+--viên tương ứng.
+--16. Với mỗi chuyến bay có trên 3 nhân viên, cho biết mã chuyến bay, và số lượng
+--khách hàng đã đặt chỗ trên chuyến bay đó.
+--17. Với mỗi sân bay đi (SBDI), cho biết tổng số chuyến bay cất cánh trong quí 4
+--năm 2000, chỉ lấy các thông tin có tổng số chuyến bay >=2. Sắp xếp giảm dần
+--theo tổng số chuyến bay.
+--18. Với mỗi loại máy bay có nhiều hơn 1 chiếc, cho biết số lượng chuyến bay đã
+--được bố trí bay bằng loại máy bay đó, xuất ra mã loại và số lượng.
