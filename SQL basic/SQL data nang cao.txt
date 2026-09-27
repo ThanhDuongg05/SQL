@@ -1,0 +1,22 @@
+SQL data nang cao
+--luong lon hon luong TB ca cong ty
+SELECT name, salary,
+FROM employees 
+WHERE salary >(SELECT AVG(salary) FROM employees)
+
+--Câu 2: Tìm tên (name) của những nhân viên thuộc phòng ban có budget > 250000 (dùng subquery với IN).
+SELECT name
+FROM employees,
+WHERE dept_id IN (SELECT dept_id FROM departments WHERE budget > 250000)
+
+--RANK() / ROW_NUMBER() — đánh số thứ hạng:
+SELECT name, salary, dept_name,
+       RANK() OVER (PARTITION BY dept_name ORDER BY salary DESC) AS rank_in_dept
+FROM employees
+JOIN departments ON employees.dept_id = departments.dept_id
+
+--Tính tổng lũy kế (running total) — hay dùng trong báo cáo doanh thu theo thời gian
+SELECT name, salary,
+       SUM(salary) OVER (ORDER BY id) AS running_total
+FROM employees
+
